@@ -117,25 +117,25 @@ trait Create
      */
     public function syncPivot($model, $data, $form = 'create')
     {
-        $fields_with_relationships = $this->getRelationFields($form);
+        $fields_with_relationships = $this->crud->getRelationFields($form);
 
         foreach ($fields_with_relationships as $key => $field) {
             if (isset($field['pivot']) && $field['pivot']) {
                 $values = isset($data[$field['name']]) ? $data[$field['name']] : [];
-                $model->{$field['name']}()->sync($values);
 
-                if (isset($field['pivotFields'])) {
-                    foreach ($field['pivotFields'] as $pivotField) {
-                        foreach ($data[$pivotField] as $pivot_id => $pivot_field) {
-                            $model->{$field['name']}()->updateExistingPivot($pivot_id, [$pivotField => $pivot_field]);
+                $relation_data = [];
+                foreach ($values as $pivot_id) {
+                    $pivot_data = [];
+
+                    if (isset($field['pivotFields'])) {
+                        foreach ($field['pivotFields'] as $pivot_field_name) {
+                            $pivot_data[$pivot_field_name] = $data[$pivot_field_name][$pivot_id];
                         }
                     }
+                    $relation_data[$pivot_id] = $pivot_data;
                 }
-            }
 
-            if (isset($field['morph']) && $field['morph'] && isset($data[$field['name']])) {
-                $values = $data[$field['name']];
-                $model->{$field['name']}()->sync($values);
+                $model->{$field['name']}()->sync($relation_data);
             }
         }
     }
